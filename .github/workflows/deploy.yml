@@ -1,0 +1,43 @@
+name: Deploy Website to GCP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to GCP Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # 定义服务器上的网站根目录
+          TARGET_DIR="/var/www/html"
+          
+          # 确保目标目录存在
+          sudo mkdir -p $TARGET_DIR
+          
+          # 进入目标目录
+          cd $TARGET_DIR
+          
+          # 清空旧文件，进行全新部署
+          echo "🧹 Cleaning up old files..."
+          sudo rm -rf ./*
+          
+          # 从 GitHub Actions 的工作区复制所有新文件到服务器
+          echo "📂 Copying new files..."
+          sudo cp -r ${{ github.workspace }}/* .
+          
+          # 将文件所有权赋予 Nginx 运行的用户 (通常是 www-data)
+          echo "🔐 Setting permissions..."
+          sudo chown -R www-data:www-data $TARGET_DIR
+          
+          echo "✅ Deployment successful!"
