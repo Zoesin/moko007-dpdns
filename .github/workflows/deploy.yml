@@ -18,26 +18,33 @@ jobs:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          # 定义服务器上的网站根目录
-          TARGET_DIR="/var/www/html"
-          
-          # 确保目标目录存在
-          sudo mkdir -p $TARGET_DIR
-          
-          # 进入目标目录
-          cd $TARGET_DIR
-          
-          # 清空旧文件，进行全新部署
-          echo "🧹 Cleaning up old files..."
-          sudo rm -rf ./*
-          
-          # 从 GitHub Actions 的工作区复制所有新文件到服务器
-          echo "📂 Copying new files..."
-          sudo cp -r ${{ github.workspace }}/* .
-          
-          # 将文件所有权赋予 Nginx 运行的用户 (通常是 www-data)
-          echo "🔐 Setting permissions..."
-          sudo chown -R www-data:www-data $TARGET_DIR
-          
-          echo "✅ Deployment successful!"
+      script: |
+        # --- 部署脚本开始 ---
+        echo "🚀 Starting deployment as user: $(whoami)"
+        
+        # 1. 定义服务器上的网站根目录
+        TARGET_DIR="/var/www/html"
+        echo "Deployment target directory is set to: ${TARGET_DIR}"
+        
+        # 2. 确保目标目录存在 (因为我们是 root，不需要 sudo)
+        mkdir -p $TARGET_DIR
+        
+        # 3. 进入目标目录
+        cd $TARGET_DIR
+        echo "Changed directory to: $(pwd)"
+        
+        # 4. 清空旧文件，进行全新部署
+        echo "🧹 Cleaning up old files..."
+        rm -rf ./*
+        
+        # 5. 从 GitHub Actions 的工作区复制所有新文件到服务器
+        #    使用 $GITHUB_WORKSPACE 环境变量，这是正确的语法
+        echo "📂 Copying new files from ${GITHUB_WORKSPACE}..."
+        cp -r $GITHUB_WORKSPACE/* .
+        
+        # 6. 将文件所有权赋予 Nginx 运行的用户 (通常是 www-data)
+        echo "🔐 Setting permissions for www-data user..."
+        chown -R www-data:www-data $TARGET_DIR
+        
+        echo "✅ Deployment successful!"
+        # --- 部署脚本结束 ---
