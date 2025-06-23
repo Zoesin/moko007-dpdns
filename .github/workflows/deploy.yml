@@ -1,4 +1,4 @@
-name: Deploy Website to Server (SUDO POWERED)
+name: Deploy Website to GCP (Final SUDO Rsync)
 
 on:
   push:
@@ -9,31 +9,38 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # 步骤 1: 检出你的网站代码
-      - name: Checkout Code
+      # 1. 检出你的网站代码
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # 步骤 2: 通过 SSH Action 部署文件
-      - name: Deploy Files via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }} # 应该是 deployer
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # 定义真实的网站根目录
-            TARGET_DIR="/var/www/mywebsite"
-            
-            # --- 以下是在服务器上执行的命令 ---
-            echo "🚀 Starting deployment as user: $(whoami) on server: $(hostname)"
-            echo "Deployment target directory is set to: ${TARGET_DIR}"
-            
-            # 进入目标目录
-            cd $TARGET_DIR || exit 1
-            echo "Changed directory to: $(pwd)"
-            
-            # 使用 sudo 来清空旧文件
-            echo "🧹 Cleaning up old files with sudo..."
-            sudo find . -mindepth 1 -delete
-            
-            echo "✅ Cleanup successful. Ready for sync."
+      # 2. 部署到服务器
+      - name: Deploy to Server via Rsync with SUDO
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+        run: |
+          # 定义真实的网站根目录
+          TARGET_DIR="/var/www/mywebsite"
+          
+          # --- 准备 SSH 环境 ---
+          echo "Setting up SSH..."
+          mkdir -p ~/.ssh
+          echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "Host ${SSH_HOST}" > ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+          echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
+
+          # --- 使用带有 sudo 的 rsync 同步文件 ---
+          echo "Synchronizing files to ${TARGET_DIR} using sudo rsync..."
+          rsync -avz --delete \
+            --rsync-path="sudo rsync" \
+            -e "ssh -i ~/.ssh/id_rsa" \
+            ./ "${SSH_USERNAME}@${SSH_HOST}:${TARGET_DIR}/"
+          
+          # 最后，确保文件所有权是 www-data，这样 Nginx 才能读取
+          echo "Setting final permissions with sudo chown..."
+          ssh "${SSH_USERNAME}@${SSH_HOST}" "sudo chown -R www-data:www-data ${TARGET_DIR}"
+          
+          echo "✅ Deployment successful!"
