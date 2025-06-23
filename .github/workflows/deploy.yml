@@ -39,7 +39,7 @@ jobs:
             echo "🚀 Starting deployment as user: $(whoami) on server: $(hostname)"
             
             # 1. 定义网站根目录
-            TARGET_DIR="/var/www/html"
+            TARGET_DIR="/var/www/mywebsite"
             echo "Deployment target directory is set to: ${TARGET_DIR}"
             
             # 2. 进入目录
