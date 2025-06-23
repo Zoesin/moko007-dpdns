@@ -58,7 +58,7 @@ jobs:
           
           # --- 使用 rsync 传输文件 (最可靠的方式) ---
           echo "Synchronizing files using rsync..."
-          rsync -avz -e "ssh -i ~/.ssh/id_rsa" ./ "${SSH_USERNAME}@${SSH_HOST}:/var/www/html/"
+          rsync -avz -e "ssh -i ~/.ssh/id_rsa" ./ "${SSH_USERNAME}@${SSH_HOST}:/var/www/mywebsite/"
 
           # --- 再次 SSH 进去设置最终权限 ---
           echo "Setting final permissions on server..."
