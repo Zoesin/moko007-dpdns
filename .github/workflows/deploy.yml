@@ -63,7 +63,7 @@ jobs:
           # --- 再次 SSH 进去设置最终权限 ---
           echo "Setting final permissions on server..."
           ssh "${SSH_USERNAME}@${SSH_HOST}" << 'EOF'
-            TARGET_DIR="/var/www/html"
+            TARGET_DIR="/var/www/mywebsite"
             echo "🔐 Setting permissions for www-data user..."
             # 使用 sudo 是因为 deployer 用户可能没有权限 chown 给 www-data
             # 我们需要给 deployer 用户免密 sudo 的权限
